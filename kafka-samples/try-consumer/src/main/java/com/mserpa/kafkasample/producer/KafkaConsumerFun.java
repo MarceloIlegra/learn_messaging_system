@@ -26,8 +26,8 @@ public class KafkaConsumerFun {
         props.put("group.id", "test");
         props.put("enable.auto.commit", "false");
         props.put("auto.commit.interval.ms", "0");
-        props.put("request.timeout.ms", "200000");
-        props.put("session.timeout.ms", "190000");
+        props.put("request.timeout.ms", "70000");
+        props.put("session.timeout.ms", "60000");
         //props.put("consumer.timeout.ms","30000");
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
@@ -41,29 +41,38 @@ public class KafkaConsumerFun {
     public void run(){
 
         LOG.info("Starting main loop");
+        Long currentOffset = null;
         while (true) {
-            Long currentOffset = null;
             Boolean hasError = false;
             LOG.info("Fetching poll messages...");
             ConsumerRecords<String, String> records = this.consumer.poll(100);
             LOG.info("Fetched " + records.count() + " messages.");
             for (ConsumerRecord<String, String> record : records) {
-                currentOffset = record.offset();
                 String message = record.value();
-                LOG.info(String.format("Processing message: %s offset: %s", message, currentOffset));
-                if(StringUtils.isNumeric(message)){
-                    LOG.info("Sleeping for " + message + " ms.");
-                    try {
-                        Thread.sleep(Long.valueOf(message));
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                LOG.info("Processing message: "+message+" lastOffset: "+currentOffset+" newOffset: " + record.offset());
+
+                if(currentOffset == null || currentOffset != record.offset()){
+                    currentOffset = record.offset();
+                    if(StringUtils.isNumeric(message)){
+                        LOG.info("Sleeping for " + message + " ms.");
+                        try {
+                            Thread.sleep(Long.valueOf(message));
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
+
                 boolean commitCompleted = commitOffset(hasError, record);
                 if(!commitCompleted) break;
             }
             LOG.info("Has Error " + hasError);
             if (hasError) keepOnCurrentOffset(currentOffset);
+            try {
+                Thread.sleep(3000L);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
         }
 
