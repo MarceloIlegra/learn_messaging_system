@@ -1,7 +1,7 @@
 var kafka = require('kafka-node');
 
 var client = new kafka.Client();
-var payloads = [{ topic: 'my-replicated-topic', partition: 0 }];
+var payloads = [{ topic: 'my-replicated-topic', partition: 0, fromOffset: -1 }];
 var options = {
     groupId: 'kafka-node-group',//consumer group id, default `kafka-node-group`
     // Auto commit config
@@ -18,6 +18,14 @@ var options = {
     // If set to 'buffer', values will be returned as raw buffer objects.
     encoding: 'utf8'
 };
+
+/* Print latest offset. */
+var offset = new kafka.Offset(client);
+
+offset.fetch([{ topic: 'my-replicated-topic', partition: 0, time: -1 }], function (err, data) {
+        var latestOffset = data['my-replicated-topic']['0'][0];
+        console.log("Consumer current offset: " + latestOffset);
+});
 
 var consumer = new kafka.Consumer(client, payloads, options);
 
