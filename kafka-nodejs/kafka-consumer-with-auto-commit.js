@@ -4,7 +4,7 @@ var kafka = require('kafka-node'),
   consumer = new Consumer(
     client,
     [{ topic: 'my-replicated-topic', partition: 0 }],
-    {autoCommit: false}
+    {autoCommit: true}
   );
 
 consumer.on('message', function (message) {
